@@ -16,7 +16,7 @@ import java.io.IOException;
 @RestController
 public class SseController { // SSE 연결 요청을 처리하는 컨트롤러
 
-    private final SseEmitters sseEmitters;
+    private final SseService sseService;
 
     // "/connect" endpoint를 통해 클라이언트가 연결을 시도 - 기본 타임아웃 : 30초 ~ 1분 ( 원하는 경우 생성자에 타임아웃(ms)을 명시 가능 )
     @GetMapping(value = "/connect", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
@@ -26,18 +26,11 @@ public class SseController { // SSE 연결 요청을 처리하는 컨트롤러
         SseEmitter emitter = new SseEmitter(60 * 60 * 1000L); // 1시간
 
         String sseKey = queueType + ":" + userId;
+        sseService.addEmitter(sseKey, emitter);
 
-        sseEmitters.addEmitter(sseKey, emitter);
+        // sse 세션이 연결되면 'connected!' 메세지 전송
+        sseService.sendTo(queueType, "connect", "connected !");
 
-        try {
-
-            // sse 세션이 연결되면 'connected!' 메세지 전송
-            emitter.send(SseEmitter.event()
-                    .name("connect")
-                    .data("connected!"));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
         return ResponseEntity.ok(emitter);
     }
 }

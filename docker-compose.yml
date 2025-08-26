@@ -1,0 +1,34 @@
+services:
+  airdnb-prometheus:
+    image: prom/prometheus
+
+    # 로컬에서 만든 prometheus.yml을 컨테이너 안에 그대로 덮어씌워서 사용
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    networks:
+      - monitoring-net
+
+  # grafana
+  airdnb-local-grafana:
+    image: grafana/grafana
+    ports:
+      - "3001:3000"
+    networks:
+      - monitoring-net
+
+  mysql_exporter_service:
+    image: prom/mysqld-exporter:latest
+    container_name: mysql-exporter
+    restart: always
+    ports:
+      - "9104:9104"
+    command:
+      - "--mysqld.username=taehyun:0136"
+      - "--mysqld.address=host.docker.internal:3306"
+    networks:
+      - monitoring-net
+
+networks:
+  monitoring-net:

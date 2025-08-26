@@ -10,14 +10,14 @@ import java.time.Instant;
 
 @Slf4j
 @RequiredArgsConstructor
-@RequestMapping("/user")
+@RequestMapping("/queue")
 @RestController
 public class QueueController {
 
     private final QueueService queueService;
 
     // 대기열 등록
-    @PostMapping("/enter")
+    @PostMapping("/register")
     public Long registerUser(@RequestParam(name = "user_id") String userId,
                                 @RequestParam(name = "queueType", defaultValue = "reserve") String queueType){
 

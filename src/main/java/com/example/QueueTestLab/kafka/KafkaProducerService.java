@@ -21,18 +21,18 @@ public class KafkaProducerService {
     private final KafkaTemplate<String, String> kafkaTemplate;
     private final ObjectMapper objectMapper;
 
-    public void sendMessage(String queueType) {
+    public void sendMessage(String queueType, String userId) {
         try {
-            KafkaMessageDto message = new KafkaMessageDto(queueType);
+            KafkaMessageDto message = new KafkaMessageDto(queueType, userId);
             String json = objectMapper.writeValueAsString(message);
 
             CompletableFuture<?> future = kafkaTemplate.send(topicName, queueType, json);
 
             future.whenComplete((result, ex) -> {
                 if (ex == null) {
-                    log.info("Kafka 메세지 전송 성공");
+                    log.info("Kafka produce success");
                 } else {
-                    log.error("Kafka 메세지 전송 실패", ex);
+                    log.error("Kafka produce fail", ex);
                 }
             });
         } catch (JsonProcessingException e) {

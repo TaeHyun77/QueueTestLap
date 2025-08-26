@@ -1,14 +1,12 @@
 package com.example.QueueTestLab.kafka;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+@AllArgsConstructor
 @Getter
 public class KafkaMessageDto {
 
     private String queueType;
-
-    public KafkaMessageDto(String queueType) {
-        this.queueType = queueType;
-    }
-
+    private String userId;
 }

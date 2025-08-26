@@ -15,7 +15,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -68,7 +67,7 @@ public class QueueService {
         Long result = (rank != null) ? rank + 1 : -1L;
 
         changeUserStatus(queueType, userId, "wait");
-        kafkaProducerService.sendMessage(queueType);
+        kafkaProducerService.sendMessage(queueType, userId);
 
         log.info("{}님 {}번째로 사용자 대기열 등록 성공", userId, result);
         return result; // rank 값 or -1 반환
@@ -81,7 +80,9 @@ public class QueueService {
 
         String keyType = queueCategory.equals("wait") ? WAIT_QUEUE : ALLOW_QUEUE;
 
-        Long rank = redisTemplate.opsForZSet().rank(queueType + keyType, userId);
+        Long rank = redisTemplate.opsForZSet()
+                .rank(queueType + keyType, userId);
+
         boolean exists = (rank != null && rank >= 0);
 
         log.info("{}님 {} 존재 여부 : {}", userId, queueCategory.equals("wait") ? "대기열" : "참가열", exists);
@@ -120,7 +121,7 @@ public class QueueService {
                 throw new ReserveException(HttpStatus.BAD_REQUEST, ErrorCode.USER_NOT_FOUND_IN_THE_QUEUE);
             }
 
-            kafkaProducerService.sendMessage(queueType);
+            kafkaProducerService.sendMessage(queueType, userId);
             log.info("{}님 대기열에서 취소 완료", userId);
 
         // 참가열에서 삭제
@@ -205,7 +206,7 @@ public class QueueService {
         redisTemplate.opsForZSet().add(queueType + WAIT_QUEUE, userId, newTimestamp);
 
         changeUserStatus(queueType, userId, "wait");
-        kafkaProducerService.sendMessage(queueType);
+        kafkaProducerService.sendMessage(queueType, userId);
     }
 
     /**
@@ -238,6 +239,7 @@ public class QueueService {
             redisTemplate.opsForZSet()
                     .remove(queueType + WAIT_QUEUE, userId);
 
+            kafkaProducerService.sendMessage(queueType, userId);
             changeUserStatus(queueType, userId, "allow");
             allowedCount++;
         }
@@ -249,7 +251,7 @@ public class QueueService {
     /**
      * 대기열의 사용자를 참가열로 maxAllowedUsers 명 옮기는 scheduling 코드
      */
-    @Scheduled(fixedDelay = 3000, initialDelay = 30000) // 시작 5초 후 실행, 매 실행 종료 후 3초 간격
+    @Scheduled(fixedDelay = 3000, initialDelay = 40000) // 시작 40초 후 실행, 매 실행 종료 후 3초 간격
     public void moveUserToAllowQ() {
         Long maxAllowedUsers = 3L;
 
@@ -261,7 +263,6 @@ public class QueueService {
 
             if (movedCount > 0) {
                 log.info("{}에서 {}명의 사용자가 참가열로 이동되었습니다.", queueType, movedCount);
-                kafkaProducerService.sendMessage(queueType);
             } else {
                 log.info("참가열로 이동된 사용자가 없습니다");
             }

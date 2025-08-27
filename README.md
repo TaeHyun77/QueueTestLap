@@ -1,3 +1,5 @@
+JMeter를 활용해 부하 테스트를 수행하고, Prometheus와 Grafana를 통해 애플리케이션, MySQL DB, Kafka의 부하 상황을 모니터링했습니다
+
 ### 대기열 시스템 구현 과정
 ---
 
